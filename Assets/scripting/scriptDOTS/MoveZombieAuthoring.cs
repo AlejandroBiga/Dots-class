@@ -1,4 +1,5 @@
 using Unity.Entities;
+using Unity.Mathematics;
 using UnityEngine;
 
 public class MoveZombieAuthoring : MonoBehaviour
@@ -16,7 +17,6 @@ public class MoveZombieAuthoring : MonoBehaviour
                 RotationSpeed = authoring.RotationSpeed     
             });
                 
-
             
         }
     }
@@ -27,5 +27,7 @@ public struct MoveUnitComponent : IComponentData
 {
     public float MoveSpeed;
     public float RotationSpeed;
+    public float3 TargetPosition;
+    
 
 }
