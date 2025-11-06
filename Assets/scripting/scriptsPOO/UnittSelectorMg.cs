@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using System;
 using Unity.Transforms;
+using Unity.Physics;
 
 
 public class UnittSelectorMg : MonoBehaviour
@@ -46,26 +47,65 @@ public class UnittSelectorMg : MonoBehaviour
                 entityManager.SetComponentEnabled<SelectedUnit>(entityArray[i], false);
             }
 
-            entityQuery = new EntityQueryBuilder(Allocator.Temp).WithAll<LocalTransform, Unit>().WithPresent<SelectedUnit>().Build(entityManager);
-
+            //definicion del maximo y minimo de un area de deteccion para tomar solamente 1 unidad
             Rect selectionAreaRect = GetSelectionAreaRect();
+            float selectionAreaSize = selectionAreaRect.width + selectionAreaRect.height;
+            float multipleSelectionSIzeMin = 40f;
+            bool isMultipleSelection = selectionAreaSize > multipleSelectionSIzeMin;
 
-
-            entityArray = entityQuery.ToEntityArray(Allocator.Temp);
-            NativeArray<LocalTransform> localtransformArray = entityQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
-
-            for (int i = 0; i < localtransformArray.Length; i++)
+            if (isMultipleSelection)
             {
-                LocalTransform unitlocalTransform = localtransformArray[i];
-                Vector2 unitScreenPosition = Camera.main.WorldToScreenPoint(unitlocalTransform.Position);
-               if(selectionAreaRect.Contains(unitScreenPosition))
-                {
-                    //aca va si la unidad desta dentro
-                    entityManager.SetComponentEnabled<SelectedUnit>(entityArray[i], true);
-                }
+                entityQuery = new EntityQueryBuilder(Allocator.Temp).WithAll<LocalTransform, Unit>().WithPresent<SelectedUnit>().Build(entityManager);
 
+                entityArray = entityQuery.ToEntityArray(Allocator.Temp);
+                NativeArray<LocalTransform> localtransformArray = entityQuery.ToComponentDataArray<LocalTransform>(Allocator.Temp);
+
+                for (int i = 0; i < localtransformArray.Length; i++)
+                {
+                    LocalTransform unitlocalTransform = localtransformArray[i];
+                    Vector2 unitScreenPosition = Camera.main.WorldToScreenPoint(unitlocalTransform.Position);
+                    if (selectionAreaRect.Contains(unitScreenPosition))
+                    {
+                        //aca va si la unidad desta dentro
+                        entityManager.SetComponentEnabled<SelectedUnit>(entityArray[i], true);
+                    }
+
+                }
             }
-            
+            else
+            {
+                // seleccionar solo 1
+                
+                entityQuery = entityManager.CreateEntityQuery(typeof(PhysicsWorldSingleton));
+                PhysicsWorldSingleton physicsWorldSingleton = entityQuery.GetSingleton<PhysicsWorldSingleton>(); 
+                CollisionWorld collisionWolrd = physicsWorldSingleton.CollisionWorld;
+
+                UnityEngine.Ray cameraRay = Camera.main.ScreenPointToRay(Input.mousePosition);
+                int unitsLayer = 6;
+                RaycastInput raycastInput = new RaycastInput {
+                    Start = cameraRay.GetPoint(0f),
+                    End = cameraRay.GetPoint(9999f),
+                    Filter = new CollisionFilter {
+                        //como no se puede convertir un int en unidad se le pone la "u" al 1 para hacer bien el bitmask
+                        BelongsTo = ~0u,
+                           CollidesWith = 1u << unitsLayer,
+                                GroupIndex = 0,
+                    }
+                };
+                if(collisionWolrd.CastRay(raycastInput, out Unity.Physics.RaycastHit raycastHit))
+                {
+                    if (entityManager.HasComponent<Unit>(raycastHit.Entity))
+                    {
+                        // selecciona la unidad
+                        entityManager.SetComponentEnabled<SelectedUnit>(raycastHit.Entity, true);
+                    }
+                }  
+
+                
+                
+                
+            }
+
             OnSelectionAreaEnd?.Invoke(this, EventArgs.Empty);
         }
 
