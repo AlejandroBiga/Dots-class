@@ -514,6 +514,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   selectionAreaTransform: {fileID: 736323209}
+  canvas: {fileID: 826389412}
 --- !u!1 &736323208
 GameObject:
   m_ObjectHideFlags: 0
