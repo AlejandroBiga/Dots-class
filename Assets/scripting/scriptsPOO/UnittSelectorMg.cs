@@ -6,6 +6,7 @@ using UnityEngine.EventSystems;
 using System;
 using Unity.Transforms;
 using Unity.Physics;
+using Unity.Mathematics;
 
 
 public class UnittSelectorMg : MonoBehaviour
@@ -116,13 +117,16 @@ public class UnittSelectorMg : MonoBehaviour
             EntityManager entityManager   = World.DefaultGameObjectInjectionWorld.EntityManager;
             EntityQuery entityQuery = new EntityQueryBuilder(Allocator.Temp).WithAll<MoveUnitComponent, SelectedUnit>().Build(entityManager);
 
+            //aca le damos la orden para moverse
             NativeArray<Entity> entityArray = entityQuery.ToEntityArray(Allocator.Temp);
             NativeArray<MoveUnitComponent> unityMoveArray = entityQuery.ToComponentDataArray<MoveUnitComponent>(Allocator.Temp);
-
+            // metemos el generador de posiciones en anillo
+            NativeArray<float3> movePositionArray  =  GenerateMovePositionArray(mouseWorldPosition, entityArray.Length);
             for (int i = 0; i < unityMoveArray.Length;  i++)
             {
                 MoveUnitComponent unitMove = unityMoveArray[i];
-                unitMove.TargetPosition = mouseWorldPosition;
+                //aca remplazamos el mouseworlposition por los anillos 
+                unitMove.TargetPosition = movePositionArray[i];
                 entityManager.SetComponentData(entityArray[i], unitMove);
 
             }
@@ -151,6 +155,49 @@ public class UnittSelectorMg : MonoBehaviour
             upperRightCorner.y - lowerLeftCorner.y
             );
     }
+    //creamos una native array para generar las posiciones de nuestro circulo de formacion y lo ponemos mas tarde con el targetposition
+    private NativeArray<float3> GenerateMovePositionArray(float3 targetPosition, int positionCount)
+    {
+        //definimos como lo va a formar una vez que demos click, generara anillos sobre nuestro targetpoition para generar posiciones que las unidades seleccionadas puedan usar 
+        NativeArray<float3> positionArray = new NativeArray<float3>(positionCount, Allocator.Temp);
+        if(positionCount == 0)
+        {
+            return positionArray;
+        }  
+        positionArray[0] = targetPosition;
+        if(positionCount == 1)
+        {
+            return positionArray;
+        }
+        //se definen las dimensiones de nuestro anillo 
+        float ringSize = 2.2f;
+        int ring = 0;
+        int positionIndex = 1;
 
+        while(positionIndex < positionCount)
+        {
+            //se define un minimo el cual multiplicara por 2 las siguientes numeros de posiciones que pueden existir dentro del anillo
+            int ringPositionCount = 3 + ring * 2; 
+
+            for(int i = 0; i < ringPositionCount; i++)
+            {
+                //generado las grillas
+                float angle = i * ((math.PI2) / ringPositionCount);
+                float3 ringVector = math.rotate(quaternion.RotateY(angle), new float3(ringSize * (ring + 1), 0, 0));
+                float3 ringPostion = targetPosition + ringVector;
+                // se le adiere la poscion a cada uno
+                positionArray[positionIndex] = ringPostion;
+                positionIndex++;
+
+                if(positionIndex >= positionCount)
+                {
+                    break;
+                }
+
+            }
+            ring++;
+        }
+        return positionArray;
+    }
 
 }
