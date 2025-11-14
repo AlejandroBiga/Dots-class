@@ -37,11 +37,11 @@ public class UnittSelectorMg : MonoBehaviour
         if (Input.GetMouseButtonUp(0))
         {
             Vector2 selectionEndMousePosition = Input.mousePosition;
-
+            
             EntityManager entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
-
             EntityQuery entityQuery = new EntityQueryBuilder(Allocator.Temp).WithAll<SelectedUnit>().Build(entityManager);
 
+            //deseleccionar las unidades
             NativeArray<Entity> entityArray = entityQuery.ToEntityArray(Allocator.Temp);
             for (int i = 0; i < entityArray.Length; i++)
             {

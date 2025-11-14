@@ -29,6 +29,7 @@ public struct SelectedUnit : IComponentData, IEnableableComponent
     public Entity VisualEffect;
     public float DepthScale;
 
+
 }
 
 
