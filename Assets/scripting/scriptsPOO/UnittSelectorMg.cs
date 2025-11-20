@@ -43,10 +43,16 @@ public class UnittSelectorMg : MonoBehaviour
 
             //deseleccionar las unidades
             NativeArray<Entity> entityArray = entityQuery.ToEntityArray(Allocator.Temp);
+            NativeArray<SelectedUnit> selectedArray = entityQuery.ToComponentDataArray<SelectedUnit>(Allocator.Temp);
             for (int i = 0; i < entityArray.Length; i++)
             {
                 entityManager.SetComponentEnabled<SelectedUnit>(entityArray[i], false);
+                SelectedUnit selected = selectedArray[i];
+                selected.deselected = true;
+                entityManager.SetComponentData(entityArray[i], selected);
+
             }
+            
 
             //definicion del maximo y minimo de un area de deteccion para tomar solamente 1 unidad
             Rect selectionAreaRect = GetSelectionAreaRect();
@@ -69,6 +75,9 @@ public class UnittSelectorMg : MonoBehaviour
                     {
                         //aca va si la unidad desta dentro
                         entityManager.SetComponentEnabled<SelectedUnit>(entityArray[i], true);
+                        SelectedUnit selected = entityManager.GetComponentData<SelectedUnit>(entityArray[i]);
+                        selected.onSelected = true;
+                        entityManager.SetComponentData(entityArray[i], selected);
                     }
 
                 }
@@ -99,6 +108,9 @@ public class UnittSelectorMg : MonoBehaviour
                     {
                         // selecciona la unidad
                         entityManager.SetComponentEnabled<SelectedUnit>(raycastHit.Entity, true);
+                         SelectedUnit selected = entityManager.GetComponentData<SelectedUnit>(raycastHit.Entity);
+                        selected.onSelected = true;
+                        entityManager.SetComponentData(raycastHit.Entity, selected);
                     }
                 }  
 
